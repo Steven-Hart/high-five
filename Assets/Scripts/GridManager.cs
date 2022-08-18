@@ -1,8 +1,9 @@
+using System;
 using UnityEditor;
+using UnityEngine.Tilemaps;
 
 namespace HighFive.Grid
 {
-    using System.Collections.Generic;
     using UnityEngine;
 
     [CustomEditor(typeof(GridManager))]
@@ -13,71 +14,73 @@ namespace HighFive.Grid
             base.OnInspectorGUI();
             GridManager gridManager = (GridManager)target;
 
-            if (GUILayout.Button("Grid Reset"))
+            if (GUILayout.Button("Initialise Grid"))
             {
-                gridManager.ResetGrid();
-            }
-
-            if (GUILayout.Button("Tile Reset"))
-            {
-                gridManager.ResetTileCache();
-            }
-
-            if (GUILayout.Button("Update Tile Size"))
-            {
-                gridManager.UpdateTileSize();
+                gridManager.Initialise();
             }
         }
     }
 
     public class GridManager : MonoBehaviour
     {
-        [SerializeField]
-        private GameObject tilePrefab;
-        
-        // Define the bounds of the grid
-        [SerializeField]
-        private int xMin = 0;
-        [SerializeField]
-        private int xMax = 100;
 
-        [SerializeField]
-        private int yMin = 0;
-        [SerializeField]
-        private int yMax = 100;
+        public LayerMask unwalkableMask;
 
-        [SerializeField]
-        private int tileSize = 1;
-        
-        [SerializeField]
-        private List<Coordinate> grid;
-        [SerializeField]
-        private TileCache tileCache;
-        
-        // Fill grid to bounds
-        public void ResetGrid()
+        public Vector2 gridBounds;
+        public float nodeRadius;
+        public Node[,] grid;
+
+        private float nodeDiameter;
+        private int gridSizeX, gridSizeY;
+
+        private RectTransform rectTransform => transform as RectTransform;
+
+        public void Initialise()
         {
-            grid = new List<Coordinate>();
-            for (int x = xMin; x < xMax; x++)
+            nodeDiameter = nodeRadius * 2;
+            gridSizeX = (int)Math.Round(gridBounds.x/nodeDiameter, MidpointRounding.ToEven);
+            gridSizeY = (int)Math.Round(gridBounds.y/nodeDiameter, MidpointRounding.ToEven);
+            CreateGrid();
+        }
+
+        private void CreateGrid()
+        {
+            grid = new Node[gridSizeX,gridSizeY];
+            Vector2 worldBottomLeft = rectTransform.position 
+                                      - (Vector3.right * gridBounds.x/2) // Move Left
+                                      - (Vector3.up * gridBounds.y/2); // Move Down
+
+            for (int x = 0; x < gridSizeX; x++)
             {
-                for (int y = yMin; y < yMax; y++)
+                for (int y = 0; y < gridSizeY; y++)
                 {
-                    grid.Add(new Coordinate(x,y));
+                    Vector2 nodeWorldPosition = worldBottomLeft + 
+                                                Vector2.right * (x * nodeDiameter + nodeRadius) +
+                                                Vector2.up * (y * nodeDiameter + nodeRadius);
+                    grid[x, y] = new Node(nodeWorldPosition)
+                    {
+                        tileStatus = Node.CheckStatus(nodeWorldPosition, nodeRadius, unwalkableMask)
+                    };
                 }
             }
         }
 
-        public void ResetTileCache()
+        // Visualize the grid
+        private void OnDrawGizmos()
         {
-            ResetGrid();
-            tileCache.DeleteAllTiles();
-            tileCache.InitialiseTileCache(gameObject.transform, tilePrefab, grid, tileSize);
-        }
-
-        public void UpdateTileSize()
-        {
-            tileCache.RepositionTiles(tileSize);
+            Gizmos.DrawWireCube(transform.position, new Vector3(gridBounds.x, gridBounds.y, 1));
+            if (grid != null)
+            {
+                foreach (var node in grid)
+                {
+                    Gizmos.color = (node.tileStatus == TileStatus.Walkable)? Color.white : Color.red;
+                    Gizmos.DrawWireCube(new Vector3(
+                        node.worldPosition.x,
+                        node.worldPosition.y,
+                        1), Vector3.one * (nodeDiameter - .1f));
+                    
+                }
+            }
         }
     }
 }
-
