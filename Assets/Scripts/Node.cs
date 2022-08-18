@@ -17,10 +17,21 @@ namespace HighFive.Grid
         public Vector2 worldPosition;
         public TileStatus tileStatus;
 
-        public Node(Vector2 position, TileStatus status = TileStatus.Walkable)
+        public int gCost;
+        public int hCost;
+        public int fCost => gCost + hCost;
+
+        public int gridX;
+        public int gridY;
+
+        public Node parent;
+
+        public Node(Vector2 position, int gridX, int gridY ,TileStatus status = TileStatus.Walkable)
         {
             worldPosition = position;
             tileStatus = status;
+            this.gridX = gridX;
+            this.gridY = gridY;
         }
         
         public static TileStatus CheckStatus(Vector3 position, float radius, LayerMask layerMask)
