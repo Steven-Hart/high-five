@@ -12,7 +12,7 @@ namespace HighFive.Grid
     }
 
     [Serializable]
-    public class Node
+    public class Node : IHeapItem<Node>
     {
         public Vector2 worldPosition;
         public TileStatus tileStatus;
@@ -26,12 +26,30 @@ namespace HighFive.Grid
 
         public Node parent;
 
+        private int heapIndex;
+
         public Node(Vector2 position, int gridX, int gridY ,TileStatus status = TileStatus.Walkable)
         {
             worldPosition = position;
             tileStatus = status;
             this.gridX = gridX;
             this.gridY = gridY;
+        }
+
+        public int HeapIndex
+        {
+            get { return heapIndex; }
+            set { heapIndex = value; }
+        }
+
+        public int CompareTo(Node otherNode)
+        {
+            int compare = fCost.CompareTo(otherNode.fCost);
+            if (compare == 0)
+            {
+                compare = hCost.CompareTo(otherNode.hCost);
+            }
+            return -compare;
         }
         
         public static TileStatus CheckStatus(Vector3 position, float radius, LayerMask layerMask)

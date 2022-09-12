@@ -24,6 +24,8 @@ namespace HighFive.Grid
     public class GridManager : MonoBehaviour
     {
 
+        public bool OnlyShowPathGizmos;
+
         public LayerMask unwalkableMask;
 
         public Vector2 gridBounds;
@@ -36,6 +38,8 @@ namespace HighFive.Grid
         private int gridSizeX, gridSizeY;
 
         private RectTransform rectTransform => transform as RectTransform;
+        
+        public int MaxSize => gridSizeX * gridSizeY;
 
         public void Awake()
         {
@@ -110,22 +114,41 @@ namespace HighFive.Grid
             Gizmos.DrawWireCube(transform.position, new Vector3(gridBounds.x, gridBounds.y, 1));
             if (grid != null)
             {
-                foreach (var node in grid)
+                if (OnlyShowPathGizmos)
                 {
-                    Gizmos.color = (node.tileStatus == TileStatus.Walkable)? Color.white : Color.red;
-                    if (path != null)
+                    foreach (var node in grid)
                     {
+                        Gizmos.color = Color.green;
+                        if (path == null) continue;
                         if (path.Contains(node))
                         {
-                            Gizmos.color = Color.green;
+                            Gizmos.DrawWireCube(new Vector3(
+                                node.worldPosition.x,
+                                node.worldPosition.y,
+                                1), Vector3.one * (nodeDiameter - .1f));
                         }
                     }
-                    Gizmos.DrawWireCube(new Vector3(
-                        node.worldPosition.x,
-                        node.worldPosition.y,
-                        1), Vector3.one * (nodeDiameter - .1f));
-                    
                 }
+                else
+                {
+                    foreach (var node in grid)
+                    {
+                        Gizmos.color = (node.tileStatus == TileStatus.Walkable)? Color.white : Color.red;
+                        if (path != null)
+                        {
+                            if (path.Contains(node))
+                            {
+                                Gizmos.color = Color.green;
+                            }
+                        }
+                        Gizmos.DrawWireCube(new Vector3(
+                            node.worldPosition.x,
+                            node.worldPosition.y,
+                            1), Vector3.one * (nodeDiameter - .1f));
+                    
+                    }
+                }
+                
             }
         }
     }

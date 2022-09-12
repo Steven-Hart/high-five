@@ -1,8 +1,7 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using HighFive.Grid;
 using UnityEngine;
+using System.Diagnostics;
 
 namespace HighFive.Pathfinding
 {
@@ -26,31 +25,26 @@ namespace HighFive.Pathfinding
 
         public void FindPath(Vector3 start, Vector3 target)
         {
+            Stopwatch stopwatch = new Stopwatch();
+            stopwatch.Start();
+            
             Node startNode = grid.NodeFromWorldPoint(start);
             Node targetNode = grid.NodeFromWorldPoint(target);
 
-            List<Node> openSet = new List<Node>();
+            Heap<Node> openSet = new Heap<Node>(grid.MaxSize);
             HashSet<Node> closedSet = new HashSet<Node>();
             openSet.Add(startNode);
 
             while (openSet.Count > 0)
             {
-                Node currentNode = openSet[0];
-                for (int i = 1; i < openSet.Count; i++)
-                {
-                    if (openSet[i].fCost < currentNode.fCost ||
-                        openSet[i].fCost == currentNode.fCost
-                        && openSet[i].hCost < currentNode.hCost)
-                    {
-                        currentNode = openSet[i];
-                    }
-                }
-
-                openSet.Remove(currentNode);
+                Node currentNode = openSet.RemoveFirst();
+                
                 closedSet.Add(currentNode);
 
                 if (currentNode == targetNode)
                 {
+                    stopwatch.Stop();
+                    print($"Path found in {stopwatch.ElapsedMilliseconds} ms");
                     RetracePath(startNode, targetNode);
                     return;
                 }
